@@ -49,6 +49,40 @@ app.MapGet("/weatherforecast", () =>
 .WithName("GetWeatherForecast")
 .WithOpenApi();
 
+var loginLogger = app.Services.GetRequiredService<ILogger<Login>>();
+
+app.MapPost("/login", async (SignInManager<TestIdentityUser> signInManager, Login login) =>
+{
+    if (login.Email is null || login.Password is null)
+    {
+        return Results.BadRequest();
+    }
+
+    // This doesn't count login failures towards account lockout
+    // To enable password failures to trigger account lockout, set lockoutOnFailure: true
+    var result = await signInManager.PasswordSignInAsync(login.Email, login.Password, isPersistent: true, lockoutOnFailure: false);
+
+    if (result.Succeeded)
+    {
+        loginLogger.LogInformation("User logged in.");
+        return Results.Ok();
+    }
+    if (result.RequiresTwoFactor)
+    {
+        throw new NotSupportedException();
+    }
+    if (result.IsLockedOut)
+    {
+        loginLogger.LogWarning("User account locked out.");
+        return Results.Unauthorized();
+    }
+    else
+    {
+        loginLogger.LogInformation("Invalid login attempt.");
+        return Results.Unauthorized();
+    }
+});
+
 app.MapRazorPages();
 
 app.Run();
@@ -57,3 +91,6 @@ internal record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary
 {
     public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
 }
+
+public record Login(string Email, string Password);
+
