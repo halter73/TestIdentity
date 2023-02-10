@@ -1,4 +1,12 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using TestIdentity.Data;
 var builder = WebApplication.CreateBuilder(args);
+var connectionString = builder.Configuration.GetConnectionString("TestIdentityContextConnection") ?? throw new InvalidOperationException("Connection string 'TestIdentityContextConnection' not found.");
+
+builder.Services.AddDbContext<TestIdentityContext>(options => options.UseSqlite(connectionString));
+
+builder.Services.AddDefaultIdentity<TestIdentityUser>(options => options.SignIn.RequireConfirmedAccount = true).AddEntityFrameworkStores<TestIdentityContext>();
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
